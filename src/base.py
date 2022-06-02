@@ -65,9 +65,9 @@ class Base(object):
 
 def main():
     url = 'https://aqiniushare.tangdou.com/E1F0C9D388626EBB9C33DC5901307461-20.mp4?sign=7c5e1fc3a06d45636b6c73134848a43c&t=62997d50'
-    base = Base(url)
     Base.headers['Range'] = 'bytes=67785102'
     Base.headers['Referer'] = 'https://share.tangdou.com/splay.php?vid=5374783'
+    base = Base(url)
     base.start()
 
 
