@@ -1,6 +1,8 @@
+import json
 import os
 import re
-import sys
+from multiprocessing import Pool
+from sys import stdout
 from urllib.error import HTTPError
 
 import requests
@@ -24,47 +26,86 @@ def get_html(url):
     return response.text
 
 
-def get_title(html):
-    pattern = re.compile('albumName":"(.*?)"')
+def get_video_info(html):
+    pattern = re.compile('"pageProps":{"videoInfo":(.*?),"featureInfo"')
     result = re.search(pattern, html)
     if result:
-        title = result.group(1).strip()
-        return title
+        return json.loads(result.group(1).strip())
 
 
-def get_m3u8():
-    m3u8 = '#EXTM3U\n#EXT-X-TARGETDURATION:10\n#EXTINF:9,\nhttp://pcw-data.video.iqiyi.com/videos/v0/20200212/1f/66/9029de811516db3005f1bc5c17a9b866.265ts?start=0&end=1583900&contentlength=1583900&sd=0&qdv=2&qd_uid=0&qd_vip=0&qd_src=01010031010000000000&qd_tm=1711859075730&qd_p=de7dc716&qd_k=71ce59d69a526fec3034b56ed9ed48b0&qd_index=vod&qd_tvid=5576720200&qd_sc=244c1c7764518e4928a2883e3a9282f4&bid=500&fr=25&qyid=3c54dtcsl4hpjj2pojutj5362m2m454j&qd_vipres=0&vcodec=1\n#EXTINF:9,\nhttp://pcw-data.video.iqiyi.com/videos/v0/20200212/1f/66/9029de811516db3005f1bc5c17a9b866.265ts?start=1583900&end=2998412&contentlength=1414512&sd=9009&qdv=2&qd_uid=0&qd_vip=0&qd_src=01010031010000000000&qd_tm=1711859075730&qd_p=de7dc716&qd_k=71ce59d69a526fec3034b56ed9ed48b0&qd_index=vod&qd_tvid=5576720200&qd_sc=244c1c7764518e4928a2883e3a9282f4&bid=500&fr=25&qyid=3c54dtcsl4hpjj2pojutj5362m2m454j&qd_vipres=0&vcodec=1\n#EXTINF:8,\nhttp://pcw-data.video.iqiyi.com/videos/v0/20200212/1f/66/9029de811516db3005f1bc5c17a9b866.265ts?start=2998412&end=3785756&contentlength=787344&sd=18643&qdv=2&qd_uid=0&qd_vip=0&qd_src=01010031010000000000&qd_tm=1711859075730&qd_p=de7dc716&qd_k=71ce59d69a526fec3034b56ed9ed48b0&qd_index=vod&qd_tvid=5576720200&qd_sc=244c1c7764518e4928a2883e3a9282f4&bid=500&fr=25&qyid=3c54dtcsl4hpjj2pojutj5362m2m454j&qd_vipres=0&vcodec=1\n#EXTINF:9,\nhttp://pcw-data.video.iqiyi.com/videos/v0/20200212/1f/66/9029de811516db3005f1bc5c17a9b866.265ts?start=3785756&end=4632132&contentlength=846376&sd=26943&qdv=2&qd_uid=0&qd_vip=0&qd_src=01010031010000000000&qd_tm=1711859075730&qd_p=de7dc716&qd_k=71ce59d69a526fec3034b56ed9ed48b0&qd_index=vod&qd_tvid=5576720200&qd_sc=244c1c7764518e4928a2883e3a9282f4&bid=500&fr=25&qyid=3c54dtcsl4hpjj2pojutj5362m2m454j&qd_vipres=0&vcodec=1\n#EXTINF:8,\nhttp://pcw-data.video.iqiyi.com/videos/v0/20200212/1f/66/9029de811516db3005f1bc5c17a9b866.265ts?start=4632132&end=5352736&contentlength=720604&sd=35035&qdv=2&qd_uid=0&qd_vip=0&qd_src=01010031010000000000&qd_tm=1711859075730&qd_p=de7dc716&qd_k=71ce59d69a526fec3034b56ed9ed48b0&qd_index=vod&qd_tvid=5576720200&qd_sc=244c1c7764518e4928a2883e3a9282f4&bid=500&fr=25&qyid=3c54dtcsl4hpjj2pojutj5362m2m454j&qd_vipres=0&vcodec=1\n#EXTINF:10,\nhttp://pcw-data.video.iqiyi.com/videos/v0/20200212/1f/66/9029de811516db3005f1bc5c17a9b866.265ts?start=5352736&end=6402716&contentlength=1049980&sd=43376&qdv=2&qd_uid=0&qd_vip=0&qd_src=01010031010000000000&qd_tm=1711859075730&qd_p=de7dc716&qd_k=71ce59d69a526fec3034b56ed9ed48b0&qd_index=vod&qd_tvid=5576720200&qd_sc=244c1c7764518e4928a2883e3a9282f4&bid=500&fr=25&qyid=3c54dtcsl4hpjj2pojutj5362m2m454j&qd_vipres=0&vcodec=1\n#EXTINF:8,\nhttp://pcw-data.video.iqiyi.com/videos/v0/20200212/1f/66/9029de811516db3005f1bc5c17a9b866.265ts?start=6402716&end=7455516&contentlength=1052800&sd=52886&qdv=2&qd_uid=0&qd_vip=0&qd_src=01010031010000000000&qd_tm=1711859075730&qd_p=de7dc716&qd_k=71ce59d69a526fec3034b56ed9ed48b0&qd_index=vod&qd_tvid=5576720200&qd_sc=244c1c7764518e4928a2883e3a9282f4&bid=500&fr=25&qyid=3c54dtcsl4hpjj2pojutj5362m2m454j&qd_vipres=0&vcodec=1\n#EXTINF:8,\nhttp://pcw-data.video.iqiyi.com/videos/v0/20200212/1f/66/9029de811516db3005f1bc5c17a9b866.265ts?start=7455516&end=8234964&contentlength=779448&sd=61227&qdv=2&qd_uid=0&qd_vip=0&qd_src=01010031010000000000&qd_tm=1711859075730&qd_p=de7dc716&qd_k=71ce59d69a526fec3034b56ed9ed48b0&qd_index=vod&qd_tvid=5576720200&qd_sc=244c1c7764518e4928a2883e3a9282f4&bid=500&fr=25&qyid=3c54dtcsl4hpjj2pojutj5362m2m454j&qd_vipres=0&vcodec=1\n#EXTINF:10,\nhttp://pcw-data.video.iqiyi.com/videos/v0/20200212/1f/66/9029de811516db3005f1bc5c17a9b866.265ts?start=8234964&end=9495316&contentlength=1260352&sd=69694&qdv=2&qd_uid=0&qd_vip=0&qd_src=01010031010000000000&qd_tm=1711859075730&qd_p=de7dc716&qd_k=71ce59d69a526fec3034b56ed9ed48b0&qd_index=vod&qd_tvid=5576720200&qd_sc=244c1c7764518e4928a2883e3a9282f4&bid=500&fr=25&qyid=3c54dtcsl4hpjj2pojutj5362m2m454j&qd_vipres=0&vcodec=1\n#EXTINF:9,\nhttp://pcw-data.video.iqiyi.com/videos/v0/20200212/1f/66/9029de811516db3005f1bc5c17a9b866.265ts?start=9495316&end=10742132&contentlength=1246816&sd=79079&qdv=2&qd_uid=0&qd_vip=0&qd_src=01010031010000000000&qd_tm=1711859075730&qd_p=de7dc716&qd_k=71ce59d69a526fec3034b56ed9ed48b0&qd_index=vod&qd_tvid=5576720200&qd_sc=244c1c7764518e4928a2883e3a9282f4&bid=500&fr=25&qyid=3c54dtcsl4hpjj2pojutj5362m2m454j&qd_vipres=0&vcodec=1\n#EXTINF:9,\nhttp://pcw-data.video.iqiyi.com/videos/v0/20200212/1f/66/9029de811516db3005f1bc5c17a9b866.265ts?start=10742132&end=12059260&contentlength=1317128&sd=87879&qdv=2&qd_uid=0&qd_vip=0&qd_src=01010031010000000000&qd_tm=1711859075730&qd_p=de7dc716&qd_k=71ce59d69a526fec3034b56ed9ed48b0&qd_index=vod&qd_tvid=5576720200&qd_sc=244c1c7764518e4928a2883e3a9282f4&bid=500&fr=25&qyid=3c54dtcsl4hpjj2pojutj5362m2m454j&qd_vipres=0&vcodec=1\n#EXTINF:10,\nhttp://pcw-data.video.iqiyi.com/videos/v0/20200212/1f/66/9029de811516db3005f1bc5c17a9b866.265ts?start=12059260&end=13277876&contentlength=1218616&sd=97347&qdv=2&qd_uid=0&qd_vip=0&qd_src=01010031010000000000&qd_tm=1711859075730&qd_p=de7dc716&qd_k=71ce59d69a526fec3034b56ed9ed48b0&qd_index=vod&qd_tvid=5576720200&qd_sc=244c1c7764518e4928a2883e3a9282f4&bid=500&fr=25&qyid=3c54dtcsl4hpjj2pojutj5362m2m454j&qd_vipres=0&vcodec=1\n#EXTINF:10,\nhttp://pcw-data.video.iqiyi.com/videos/v0/20200212/1f/66/9029de811516db3005f1bc5c17a9b866.265ts?start=13277876&end=14554960&contentlength=1277084&sd=106981&qdv=2&qd_uid=0&qd_vip=0&qd_src=01010031010000000000&qd_tm=1711859075730&qd_p=de7dc716&qd_k=71ce59d69a526fec3034b56ed9ed48b0&qd_index=vod&qd_tvid=5576720200&qd_sc=244c1c7764518e4928a2883e3a9282f4&bid=500&fr=25&qyid=3c54dtcsl4hpjj2pojutj5362m2m454j&qd_vipres=0&vcodec=1\n#EXTINF:10,\nhttp://pcw-data.video.iqiyi.com/videos/v0/20200212/1f/66/9029de811516db3005f1bc5c17a9b866.265ts?start=14554960&end=15412052&contentlength=857092&sd=116741&qdv=2&qd_uid=0&qd_vip=0&qd_src=01010031010000000000&qd_tm=1711859075730&qd_p=de7dc716&qd_k=71ce59d69a526fec3034b56ed9ed48b0&qd_index=vod&qd_tvid=5576720200&qd_sc=244c1c7764518e4928a2883e3a9282f4&bid=500&fr=25&qyid=3c54dtcsl4hpjj2pojutj5362m2m454j&qd_vipres=0&vcodec=1\n#EXTINF:8,\nhttp://pcw-data.video.iqiyi.com/videos/v0/20200212/1f/66/9029de811516db3005f1bc5c17a9b866.265ts?start=15412052&end=15948416&contentlength=536364&sd=126668&qdv=2&qd_uid=0&qd_vip=0&qd_src=01010031010000000000&qd_tm=1711859075730&qd_p=de7dc716&qd_k=71ce59d69a526fec3034b56ed9ed48b0&qd_index=vod&qd_tvid=5576720200&qd_sc=244c1c7764518e4928a2883e3a9282f4&bid=500&fr=25&qyid=3c54dtcsl4hpjj2pojutj5362m2m454j&qd_vipres=0&vcodec=1\n#EXTINF:9,\nhttp://pcw-data.video.iqiyi.com/videos/v0/20200212/1f/66/9029de811516db3005f1bc5c17a9b866.265ts?start=15948416&end=16561672&contentlength=613256&sd=135009&qdv=2&qd_uid=0&qd_vip=0&qd_src=01010031010000000000&qd_tm=1711859075730&qd_p=de7dc716&qd_k=71ce59d69a526fec3034b56ed9ed48b0&qd_index=vod&qd_tvid=5576720200&qd_sc=244c1c7764518e4928a2883e3a9282f4&bid=500&fr=25&qyid=3c54dtcsl4hpjj2pojutj5362m2m454j&qd_vipres=0&vcodec=1\n#EXTINF:9,\nhttp://pcw-data.video.iqiyi.com/videos/v0/20200212/1f/66/9029de811516db3005f1bc5c17a9b866.265ts?start=16561672&end=17170416&contentlength=608744&sd=144686&qdv=2&qd_uid=0&qd_vip=0&qd_src=01010031010000000000&qd_tm=1711859075730&qd_p=de7dc716&qd_k=71ce59d69a526fec3034b56ed9ed48b0&qd_index=vod&qd_tvid=5576720200&qd_sc=244c1c7764518e4928a2883e3a9282f4&bid=500&fr=25&qyid=3c54dtcsl4hpjj2pojutj5362m2m454j&qd_vipres=0&vcodec=1\n#EXTINF:8,\nhttp://pcw-data.video.iqiyi.com/videos/v0/20200212/1f/66/9029de811516db3005f1bc5c17a9b866.265ts?start=17170416&end=17740620&contentlength=570204&sd=152735&qdv=2&qd_uid=0&qd_vip=0&qd_src=01010031010000000000&qd_tm=1711859075730&qd_p=de7dc716&qd_k=71ce59d69a526fec3034b56ed9ed48b0&qd_index=vod&qd_tvid=5576720200&qd_sc=244c1c7764518e4928a2883e3a9282f4&bid=500&fr=25&qyid=3c54dtcsl4hpjj2pojutj5362m2m454j&qd_vipres=0&vcodec=1\n#EXT-X-ENDLIST\n\n'
-    return m3u8
+def get_m3u8(html, tvid):
+    pattern = re.compile('ptid=(.*?)&')
+    result = re.search(pattern, html)
+    bid = 600
+    vid = '74367c03493325bc536d782ff3eafd30'
+    src = result.group(1).strip() if result else ''
+    url = 'https://cache.video.iqiyi.com/dash?tvid=%d&bid=%d&vid=%s&src=%s&vt=0&rs=1&uid=&ori=pcw&ps=1' % (
+        tvid, bid, vid, src
+    )
+    url = 'https://cache.video.iqiyi.com/dash?tvid=244044600&bid=600&vid=74367c03493325bc536d782ff3eafd30&src=01010031010000000000&vt=0&rs=1&uid=&ori=pcw&ps=1&k_uid=6c09fed07aaf6079a2fb60acd9e4c80e&pt=0&d=0&s=&lid=0&cf=0&ct=0&authKey=e1977be072c1b12594238952d21351f7&k_tag=1&dfp=a09a3f6da97bf74c09a9e24aec21fa35114fc66b8646e7f364e12e87a736f905df&locale=zh_cn&pck=&k_err_retries=0&up=&sr=1&qd_v=5&tm=1711934900812&qdy=u&qds=0&k_ft1=706436220846084&k_ft4=1162321298202628&k_ft2=262335&k_ft5=134217729&k_ft6=128&k_ft7=688390148&fr_300=120_120_120_120_120_120&fr_500=120_120_120_120_120_120&fr_600=120_120_120_120_120_120&fr_800=120_120_120_120_120_120&fr_1020=120_120_120_120_120_120&bop=%7B%22version%22%3A%2210.0%22%2C%22dfp%22%3A%22a09a3f6da97bf74c09a9e24aec21fa35114fc66b8646e7f364e12e87a736f905df%22%2C%22b_ft1%22%3A24%7D&ut=0&vf=ee904be1fd0de13d0fb21d06af12d9e6'
+    html = get_html(url)
+    if html:
+        data = json.loads(html)
+        video = data['data']['program']['video']
+        for index, item in enumerate(video):
+            if 'm3u8' in item:
+                m3u8 = item['m3u8']
+                return m3u8
+
+
+def m3u8_to_mp4(m3u8, title):
+    if '#EXTM3U' in m3u8:
+        lines = m3u8.split('\n')
+        urls = []
+        for index, item in enumerate(lines):
+            if '.265ts' in item:
+                urls.append(item)
+        if len(urls) > 0:
+            path = os.path.join(os.getcwd(), title)
+            if not os.path.exists(path):
+                os.makedirs(path)
+            pool = Pool(32)
+            for index, url in enumerate(urls):
+                filename = '%d.265ts' % (index + 1)
+                filepath = os.path.join(path, filename)
+                pool.apply_async(download, args=(url, filepath))
+            pool.close()
+            pool.join()
+    else:
+        raise BaseException('非m3u8链接')
 
 
 def download(url, filepath):
     headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36'
+        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36'
     }
     response = request('get', url, headers=headers, stream=True, verify=False)
     size = 0
     chunk_size = 1024
     if response.status_code == 200:
-        content_length = int(response.headers['Content-Length'])
-        sys.stdout.write('文件大小: %0.2fMB\n' % (content_length / chunk_size / 1024))
+        content_length = int(response.headers['content-length'])
+        stdout.write('文件大小: %0.2fMB\n' % (content_length / chunk_size / 1024))
         with open(filepath, 'wb') as file:
             for data in response.iter_content(chunk_size=chunk_size):
                 file.write(data)
                 size += len(data)
                 file.flush()
-                sys.stdout.write('下载进度: %.2f%%\r' % float(size / content_length * 100))
+                stdout.write('下载进度: %.2f%%\r' % float(size / content_length * 100))
                 if size / content_length == 1:
                     print('\n')
     else:
         print('下载出错')
-        if os.path.exists(filepath):
-            os.remove(filepath)
 
 
 def main():
     url = 'https://www.iqiyi.com/v_19rri0vxp0.html'
     html = get_html(url)
-    title = get_title(html)
+    video_info = get_video_info(html)
+    if video_info:
+        title = video_info['name']
+        tvid = video_info['tvId']
+        m3u8 = get_m3u8(html, tvid)
+        m3u8_to_mp4(m3u8, title)
 
 
 if __name__ == '__main__':
