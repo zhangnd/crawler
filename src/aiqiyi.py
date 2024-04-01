@@ -79,7 +79,7 @@ def m3u8_to_mp4(m3u8, title):
             pool.close()
             pool.join()
     else:
-        raise BaseException('非m3u8链接')
+        print('非m3u8链接')
 
 
 def download(url, filepath):
