@@ -42,15 +42,17 @@ def get_m3u8(html, tvid):
     url = 'https://cache.video.iqiyi.com/dash?tvid=%d&bid=%d&vid=%s&src=%s&vt=0&rs=1&uid=&ori=pcw&ps=1' % (
         tvid, bid, vid, src
     )
-    url = 'https://cache.video.iqiyi.com/dash?tvid=244044600&bid=600&vid=74367c03493325bc536d782ff3eafd30&src=01010031010000000000&vt=0&rs=1&uid=&ori=pcw&ps=1&k_uid=6c09fed07aaf6079a2fb60acd9e4c80e&pt=0&d=0&s=&lid=0&cf=0&ct=0&authKey=e1977be072c1b12594238952d21351f7&k_tag=1&dfp=a09a3f6da97bf74c09a9e24aec21fa35114fc66b8646e7f364e12e87a736f905df&locale=zh_cn&pck=&k_err_retries=0&up=&sr=1&qd_v=5&tm=1711934900812&qdy=u&qds=0&k_ft1=706436220846084&k_ft4=1162321298202628&k_ft2=262335&k_ft5=134217729&k_ft6=128&k_ft7=688390148&fr_300=120_120_120_120_120_120&fr_500=120_120_120_120_120_120&fr_600=120_120_120_120_120_120&fr_800=120_120_120_120_120_120&fr_1020=120_120_120_120_120_120&bop=%7B%22version%22%3A%2210.0%22%2C%22dfp%22%3A%22a09a3f6da97bf74c09a9e24aec21fa35114fc66b8646e7f364e12e87a736f905df%22%2C%22b_ft1%22%3A24%7D&ut=0&vf=ee904be1fd0de13d0fb21d06af12d9e6'
+    # url = 'https://cache.video.iqiyi.com/dash?tvid=244044600&bid=600&vid=74367c03493325bc536d782ff3eafd30&src=01010031010000000000&vt=0&rs=1&uid=&ori=pcw&ps=1&k_uid=6c09fed07aaf6079a2fb60acd9e4c80e&pt=0&d=0&s=&lid=0&cf=0&ct=0&authKey=e1977be072c1b12594238952d21351f7&k_tag=1&dfp=a09a3f6da97bf74c09a9e24aec21fa35114fc66b8646e7f364e12e87a736f905df&locale=zh_cn&pck=&k_err_retries=0&up=&sr=1&qd_v=5&tm=1711934900812&qdy=u&qds=0&k_ft1=706436220846084&k_ft4=1162321298202628&k_ft2=262335&k_ft5=134217729&k_ft6=128&k_ft7=688390148&fr_300=120_120_120_120_120_120&fr_500=120_120_120_120_120_120&fr_600=120_120_120_120_120_120&fr_800=120_120_120_120_120_120&fr_1020=120_120_120_120_120_120&bop=%7B%22version%22%3A%2210.0%22%2C%22dfp%22%3A%22a09a3f6da97bf74c09a9e24aec21fa35114fc66b8646e7f364e12e87a736f905df%22%2C%22b_ft1%22%3A24%7D&ut=0&vf=ee904be1fd0de13d0fb21d06af12d9e6'
+    url = 'https://cache.video.iqiyi.com/dash?tvid=244044600&bid=600&vid=74367c03493325bc536d782ff3eafd30&src=01010031010000000000&vt=0&rs=1&uid=&ori=pcw&ps=1&k_uid=3c54dtcsl4hpjj2pojutj5362m2m454j&pt=0&d=0&s=&lid=0&cf=0&ct=0&authKey=535d06fd2856b1e9e8bf8a15b30e2c36&k_tag=1&dfp=a0e901cef978c8495f8b06273621fd24b50ec704be660c775a039f3192640e4f6e&locale=zh_cn&pck=&k_err_retries=0&up=&sr=1&qd_v=5&tm=1711972450835&qdy=u&qds=0&k_ft1=706436220846084&k_ft4=1162321298202628&k_ft2=262335&k_ft5=134217729&k_ft6=128&k_ft7=688390148&fr_300=120_120_120_120_120_120&fr_500=120_120_120_120_120_120&fr_600=120_120_120_120_120_120&fr_800=120_120_120_120_120_120&fr_1020=120_120_120_120_120_120&bop=%7B%22version%22%3A%2210.0%22%2C%22dfp%22%3A%22a0e901cef978c8495f8b06273621fd24b50ec704be660c775a039f3192640e4f6e%22%2C%22b_ft1%22%3A24%7D&ut=0&vf=a1bb8a7b6ae5c0b071560bc8b9daf79e'
     html = get_html(url)
     if html:
         data = json.loads(html)
-        video = data['data']['program']['video']
-        for index, item in enumerate(video):
-            if 'm3u8' in item:
-                m3u8 = item['m3u8']
-                return m3u8
+        if data['code'] == 'A00000':
+            video = data['data']['program']['video']
+            for index, item in enumerate(video):
+                if 'm3u8' in item:
+                    m3u8 = item['m3u8']
+                    return m3u8
 
 
 def m3u8_to_mp4(m3u8, title):
@@ -105,7 +107,8 @@ def main():
         title = video_info['name']
         tvid = video_info['tvId']
         m3u8 = get_m3u8(html, tvid)
-        m3u8_to_mp4(m3u8, title)
+        if m3u8:
+            m3u8_to_mp4(m3u8, title)
 
 
 if __name__ == '__main__':
