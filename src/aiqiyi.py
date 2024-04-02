@@ -27,11 +27,29 @@ def get_html(url):
     return response.text
 
 
-def get_video_info(html):
-    pattern = re.compile('"pageProps":{"videoInfo":(.*?),"featureInfo"')
+def get_title(html):
+    pattern = re.compile('<title>(.*?)</title>')
     result = re.search(pattern, html)
     if result:
-        return json.loads(result.group(1).strip())
+        title = result.group(1).strip()
+        return title
+
+
+def get_player_data(html):
+    pattern = re.compile('QiyiPlayerProphetData=(.*?)</script>')
+    result = re.search(pattern, html)
+    if result:
+        data = result.group(1).strip()
+        data = json.loads(data)
+        return data
+
+
+def get_base_info(tvid):
+    url = 'https://mesh.if.iqiyi.com/player/pcw/video/baseInfo?id=%s' % tvid
+    html = get_html(url)
+    data = json.loads(html)
+    if data['code'] == 'A00000':
+        return data['data']
 
 
 def get_m3u8(html, tvid):
@@ -58,9 +76,11 @@ def get_m3u8(html, tvid):
                 if 'm3u8' in item:
                     m3u8 = item['m3u8']
                     return m3u8
+        else:
+            print(data['msg'])
 
 
-def m3u8_to_mp4(m3u8, title):
+def m3u8_to_mp4(title, m3u8):
     if '#EXTM3U' in m3u8:
         lines = m3u8.split('\n')
         urls = []
@@ -107,13 +127,18 @@ def download(url, filepath):
 def main():
     url = 'https://www.iqiyi.com/v_19rri0vxp0.html'
     html = get_html(url)
-    video_info = get_video_info(html)
-    if video_info:
-        title = video_info['name']
-        tvid = video_info['tvId']
-        m3u8 = get_m3u8(html, tvid)
-        if m3u8:
-            m3u8_to_mp4(m3u8, title)
+    title = get_title(html)
+    if title == '对不起，内容暂时无法观看':
+        return
+    player_data = get_player_data(html)
+    if player_data:
+        tvid = player_data['tvid']
+        base_info = get_base_info(tvid)
+        if base_info:
+            title = base_info['name']
+            m3u8 = get_m3u8(html, tvid)
+            if m3u8:
+                m3u8_to_mp4(title, m3u8)
 
 
 if __name__ == '__main__':
