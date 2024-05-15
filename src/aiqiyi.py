@@ -88,9 +88,13 @@ def m3u8_to_mp4(title, m3u8):
             path = os.path.join(os.getcwd(), title)
             if not os.path.exists(path):
                 os.makedirs(path)
-            pool = Pool(32)
+            command = 'type nul > %s/input.txt' % title
+            os.system(command)
+            pool = Pool(8)
             for index, url in enumerate(urls):
                 filename = '%d.265ts' % (index + 1)
+                command = "echo file '%s'>> %s/input.txt" % (filename, title)
+                os.system(command)
                 file = os.path.join(path, filename)
                 pool.apply_async(download, args=(url, file))
             pool.close()
