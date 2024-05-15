@@ -7,8 +7,9 @@ from urllib.parse import urlparse
 import requests
 import urllib3
 from requests import HTTPError
+from urllib3.exceptions import InsecureRequestWarning
 
-urllib3.disable_warnings()
+urllib3.disable_warnings(InsecureRequestWarning)
 
 
 def request(method, url, **kwargs):
@@ -54,22 +55,22 @@ def get_play_url(cid, bvid):
     return video_url, audio_url
 
 
-def download(referer, url, filepath):
+def download(referer, url, file):
     headers = {
         'referer': referer,
         'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36'
     }
-    size = 0
     response = request('get', url, headers=headers, stream=True, verify=False)
-    chunk_size = 1024
     if response.status_code == 200:
         content_length = int(response.headers['content-length'])
-        stdout.write('文件大小: %0.2fMB\n' % (content_length / chunk_size / 1024))
-        with open(filepath, 'wb') as file:
+        stdout.write('文件大小: %0.2fMB\n' % (content_length / 1024 / 1024))
+        with open(file, 'wb') as f:
+            chunk_size = 1024
+            size = 0
             for data in response.iter_content(chunk_size=chunk_size):
-                file.write(data)
+                f.write(data)
+                f.flush()
                 size += len(data)
-                file.flush()
                 stdout.write('下载进度: %.2f%%\r' % float(size / content_length * 100))
                 if size / content_length == 1:
                     print('\n')
