@@ -103,6 +103,8 @@ def m3u8_to_mp4(title, m3u8):
                     f.write("file '%d.265ts'\n" % (i + 1))
             command = 'ffmpeg -f concat -i %s/input.txt -c:v libx264 -c:a copy %s.mp4' % (title, title)
             os.system(command)
+            command = 'ffprobe -v quiet -print_format json -show_streams %s.mp4' % title
+            os.system(command)
     else:
         print('非m3u8链接')
 
